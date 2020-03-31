@@ -64,6 +64,7 @@ var (
 		consts.SideloadStr:         sideloadHelp,
 		consts.TerminateStr:        terminateHelp,
 		consts.NamedPipeStr:        namedPipeListenerHelp,
+		consts.TCPListenerStr:      tcpListenerHelp,
 
 		consts.WebsitesStr:      websitesHelp,
 		consts.ScreenshotStr:    screenshotHelp,
@@ -349,8 +350,13 @@ It is a directory containing any number of files, with a mandatory [[.Bold]]mani
  - Linux: /bin/bash
  - Mac OS X: /Applications/Safari.app/Contents/MacOS/SafariForWebKitDevelopment
 `
+
 	namedPipeListenerHelp = `[[.Bold]]Command:[[.Normal]] starts a new named pipe listener
 [[.Bold]]About:[[.Normal]]  Starts a new named pipe listener with the specific name
+`
+
+	tcpListenerHelp = `[[.Bold]]Command:[[.Normal]] starts a new TCP listener
+[[.Bold]]About:[[.Normal]]  Starts a new TCP listener on the speciefied host and port
 `
 )
 

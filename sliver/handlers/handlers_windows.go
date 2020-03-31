@@ -22,14 +22,8 @@ import (
 	// {{if .Debug}}
 	"log"
 	// {{end}}
-	"math/rand"
-	"net"
-	"os"
-	"strings"
-	"time"
 
 	pb "github.com/bishopfox/sliver/protobuf/sliver"
-	"github.com/bishopfox/sliver/sliver/pivots"
 	"github.com/bishopfox/sliver/sliver/pivots/namedpipe"
 	"github.com/bishopfox/sliver/sliver/priv"
 	"github.com/bishopfox/sliver/sliver/taskrunner"
@@ -277,89 +271,6 @@ func spawnDllHandler(data []byte, resp RPCResponse) {
 	resp(data, err)
 }
 
-func nampedPipeAcceptNewConnection(ln *namedpipe.PipeListener, connection *transports.Connection) {
-	hostname, err := os.Hostname()
-	if err != nil {
-		// {{if .Debug}}
-		log.Printf("Failed to determine hostname %s", err)
-		// {{end}}
-		hostname = "."
-	}
-	namedPipe := strings.ReplaceAll(ln.Addr().String(), ".", hostname)
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			continue
-		}
-		rand.Seed(time.Now().UnixNano())
-		pivotID := rand.Uint32()
-		pivotsMap.AddPivot(pivotID, &conn)
-		SendPivotOpen(pivotID, "named-pipe", namedPipe, connection)
-
-		// {{if .Debug}}
-		log.Println("Accepted a new connection")
-		// {{end}}
-
-		// handle connection like any other net.Conn
-		go nampedPipeConnectionHandler(&conn, connection, pivotID)
-	}
-}
-
-func nampedPipeConnectionHandler(conn *net.Conn, connection *transports.Connection, pivotID uint32) {
-
-	defer func() {
-		// {{if .Debug}}
-		log.Println("Cleaning up for pivot %d", pivotID)
-		// {{end}}
-		(*conn).Close()
-		pivotClose := &pb.PivotClose{
-			PivotID: pivotID,
-		}
-		data, err := proto.Marshal(pivotClose)
-		if err != nil {
-			// {{if .Debug}}
-			log.Println(err)
-			// {{end}}
-		}
-		connection.Send <- &pb.Envelope{
-			Type: pb.MsgPivotClose,
-			Data: data,
-		}
-	}()
-
-	for {
-		envelope, err := pivots.PivotReadEnvelope(conn)
-		if err != nil {
-			// {{if .Debug}}
-			log.Println(err)
-			// {{end}}
-			return
-		}
-		dataBuf, err1 := proto.Marshal(envelope)
-		if err1 != nil {
-			// {{if .Debug}}
-			log.Println(err1)
-			// {{end}}
-			return
-		}
-		pivotOpen := &pb.PivotData{
-			PivotID: pivotID,
-			Data:    dataBuf,
-		}
-		data2, err2 := proto.Marshal(pivotOpen)
-		if err2 != nil {
-			// {{if .Debug}}
-			log.Println(err2)
-			// {{end}}
-			return
-		}
-		connection.Send <- &pb.Envelope{
-			Type: pb.MsgPivotData,
-			Data: data2,
-		}
-	}
-}
-
 func namedPipeListenerHandler(envelope *pb.Envelope, connection *transports.Connection) {
 	namedPipeReq := &pb.NamedPipesReq{}
 	err := proto.Unmarshal(envelope.Data, namedPipeReq)
@@ -400,7 +311,7 @@ func namedPipeListenerHandler(envelope *pb.Envelope, connection *transports.Conn
 		return
 	}
 
-	go nampedPipeAcceptNewConnection(ln, connection)
+	go namedpipe.NampedPipeAcceptNewConnection(ln, connection)
 
 	namedPipeResp := &pb.NamedPipes{
 		Success: true,

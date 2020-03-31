@@ -90,6 +90,7 @@ var (
 		"shell/pty/pty_unsupported.go",
 
 		"pivots/pivots.go",
+		"pivots/tcp/tcp.go",
 		"pivots/namedpipe/namedpipe.go",
 		"pivots/namedpipe/npipe_windows.go",
 		"pivots/namedpipe/znpipe_windows_386.go",
@@ -107,7 +108,7 @@ var (
 		"sc/screenshot_linux.go",
 		"sc/screenshot_windows.go",
 		"sc/screenshot.go",
-		
+
 		"syscalls/syscalls.go",
 		"syscalls/syscalls_windows.go",
 		"syscalls/types_windows.go",
@@ -128,7 +129,6 @@ var (
 		"winhttp/winhttp.go",
 
 		"sliver.go",
-
 
 		"3rdparty/BurntSushi/xgb/dri2/dri2.go",
 		"3rdparty/BurntSushi/xgb/res/res.go",
@@ -207,9 +207,8 @@ var (
 		"3rdparty/kbinani/screenshot/screenshot_solaris.go",
 		"3rdparty/kbinani/screenshot/screenshot_netbsd.go",
 		"3rdparty/kbinani/screenshot/screenshot_windows.go",
-		"3rdparty/kbinani/screenshot/screenshot_go1.9_or_earlier_darwin.go",	
+		"3rdparty/kbinani/screenshot/screenshot_go1.9_or_earlier_darwin.go",
 		"3rdparty/kbinani/screenshot/screenshot.go",
-
 
 		// "go.mod",
 

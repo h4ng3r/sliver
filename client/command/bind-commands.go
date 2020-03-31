@@ -968,6 +968,24 @@ func BindCommands(app *grumble.App, server *core.SliverServer) {
 	})
 
 	app.AddCommand(&grumble.Command{
+		Name:     consts.TCPListenerStr,
+		Help:     "Start a TCP listener",
+		LongHelp: help.GetHelpFor(consts.TCPListenerStr),
+		Flags: func(f *grumble.Flags) {
+			f.String("p", "port", "", "listening port")
+		},
+		AllowArgs: true,
+		Run: func(ctx *grumble.Context) error {
+			c2.StartPivotListener()
+			fmt.Println()
+			tcpListener(ctx, server.RPC)
+			fmt.Println()
+			return nil
+		},
+		HelpGroup: consts.SliverHelpGroup,
+	})
+
+	app.AddCommand(&grumble.Command{
 		Name:      consts.TerminateStr,
 		Help:      "Kill a process",
 		LongHelp:  help.GetHelpFor(consts.TerminateStr),
