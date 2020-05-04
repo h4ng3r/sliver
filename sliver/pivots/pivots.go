@@ -81,7 +81,7 @@ func PivotReadEnvelope(conn *net.Conn) (*pb.Envelope, error) {
 	_, err := (*conn).Read(dataLengthBuf)
 	if err != nil {
 		// {{if .Debug}}
-		log.Printf("Named Pipe error (read msg-length): %v\n", err)
+		log.Printf("pivots.PivotReadEnvelope error (read msg-length): %v\n", err)
 		// {{end}}
 		return nil, err
 	}

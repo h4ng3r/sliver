@@ -91,6 +91,7 @@ var (
 
 		sliverpb.MsgIfconfigReq:   rpcIfconfig,
 		sliverpb.MsgNamedPipesReq: rpcNamedPipesListener,
+		sliverpb.MsgTCPReq:        rpcTCPListener,
 
 		sliverpb.MsgShellReq:      rpcShell,
 		sliverpb.MsgExecuteReq:    rpcExecute,

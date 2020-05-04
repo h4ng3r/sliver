@@ -116,6 +116,7 @@ const (
 	SpawnDllStr         = "spawndll"
 	LoadExtensionStr    = "load-extension"
 	NamedPipeStr        = "named-pipe"
+	TCPListenerStr      = "tcp-pivot"
 
 	WebsitesStr = "websites"
 

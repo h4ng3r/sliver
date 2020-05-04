@@ -294,6 +294,7 @@ func BindCommands(app *grumble.App, server *core.SliverServer) {
 			f.String("t", "http", "", "http(s) connection strings")
 			f.String("n", "dns", "", "dns connection strings")
 			f.String("p", "named-pipe", "", "named-pipe connection strings")
+			f.String("i", "tcp-pivot", "", "tcp-pivot connection strings")
 
 			f.Int("j", "reconnect", defaultReconnect, "attempt to reconnect every n second(s)")
 			f.Int("k", "max-errors", defaultMaxErrors, "max number of connection errors")
@@ -329,6 +330,7 @@ func BindCommands(app *grumble.App, server *core.SliverServer) {
 			f.String("t", "http", "", "http(s) connection strings")
 			f.String("n", "dns", "", "dns connection strings")
 			f.String("p", "named-pipe", "", "named-pipe connection strings")
+			f.String("i", "tcp-pivot", "", "tcp-pivot connection strings")
 
 			f.Int("j", "reconnect", 60, "attempt to reconnect every n second(s)")
 			f.Int("k", "max-errors", 1000, "max number of connection errors")
@@ -952,7 +954,7 @@ func BindCommands(app *grumble.App, server *core.SliverServer) {
 
 	app.AddCommand(&grumble.Command{
 		Name:     consts.NamedPipeStr,
-		Help:     "Start a named pipe listener",
+		Help:     "Start a named pipe pivot listener",
 		LongHelp: help.GetHelpFor(consts.NamedPipeStr),
 		Flags: func(f *grumble.Flags) {
 			f.String("n", "name", "", "name of the named pipe")
@@ -962,6 +964,24 @@ func BindCommands(app *grumble.App, server *core.SliverServer) {
 			c2.StartPivotListener()
 			fmt.Println()
 			namedPipeListener(ctx, server.RPC)
+			fmt.Println()
+			return nil
+		},
+		HelpGroup: consts.SliverHelpGroup,
+	})
+
+	app.AddCommand(&grumble.Command{
+		Name:     consts.TCPListenerStr,
+		Help:     "Start a TCP pivot listener",
+		LongHelp: help.GetHelpFor(consts.TCPListenerStr),
+		Flags: func(f *grumble.Flags) {
+			f.String("p", "port", "", "listening port")
+		},
+		AllowArgs: true,
+		Run: func(ctx *grumble.Context) error {
+			c2.StartPivotListener()
+			fmt.Println()
+			tcpListener(ctx, server.RPC)
 			fmt.Println()
 			return nil
 		},

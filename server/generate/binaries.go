@@ -101,6 +101,7 @@ type SliverConfig struct {
 	HTTPc2Enabled     bool       `json:"c2_http_enabled"`
 	DNSc2Enabled      bool       `json:"c2_dns_enabled"`
 	NamePipec2Enabled bool       `json:"c2_namedpipe_enabled"`
+	TCPPivotc2Enabled bool       `json:"c2_tcppivot_enabled"`
 	CanaryDomains     []string   `json:"canary_domains"`
 
 	// Limits
@@ -181,6 +182,7 @@ func SliverConfigFromProtobuf(pbConfig *clientpb.SliverConfig) *SliverConfig {
 	cfg.HTTPc2Enabled = isC2Enabled([]string{"http", "https"}, cfg.C2)
 	cfg.DNSc2Enabled = isC2Enabled([]string{"dns"}, cfg.C2)
 	cfg.NamePipec2Enabled = isC2Enabled([]string{"namedpipe"}, cfg.C2)
+	cfg.TCPPivotc2Enabled = isC2Enabled([]string{"tcppivot"}, cfg.C2)
 
 	cfg.FileName = pbConfig.FileName
 	return cfg
@@ -365,7 +367,7 @@ func SliverExecutable(config *SliverConfig) (string, error) {
 
 // list from https://github.com/golang/go/blob/master/src/go/build/syslist.go
 const (
-	goosList = "aix android darwin dragonfly freebsd hurd illumos js linux nacl netbsd openbsd plan9 solaris windows zos "
+	goosList   = "aix android darwin dragonfly freebsd hurd illumos js linux nacl netbsd openbsd plan9 solaris windows zos "
 	goarchList = "386 amd64 amd64p32 arm armbe arm64 arm64be ppc64 ppc64le mips mipsle mips64 mips64le mips64p32 mips64p32le ppc riscv riscv64 s390 s390x sparc sparc64 wasm "
 )
 
@@ -385,6 +387,7 @@ func renderSliverGoCode(config *SliverConfig, goConfig *gogo.GoConfig) (string, 
 	config.HTTPc2Enabled = isC2Enabled([]string{"http", "https"}, config.C2)
 	config.DNSc2Enabled = isC2Enabled([]string{"dns"}, config.C2)
 	config.NamePipec2Enabled = isC2Enabled([]string{"namedpipe"}, config.C2)
+	config.TCPPivotc2Enabled = isC2Enabled([]string{"tcppivot"}, config.C2)
 
 	sliversDir := GetSliversDir() // ~/.sliver/slivers
 	projectGoPathDir := path.Join(sliversDir, config.GOOS, config.GOARCH, config.Name)

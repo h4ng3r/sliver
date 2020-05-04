@@ -362,7 +362,7 @@ message Screenshot {
   uint32 SliverID = 9;
 }
 
-// Named Pipes Messages
+// Named Pipes Messages for pivoting
 message NamedPipesReq {
   string PipeName = 16;
   uint32 SliverID = 9;
@@ -373,8 +373,18 @@ message NamedPipes {
   string Err = 2;
 }
 
-// Pivot transport
+// TCP Messages for pivoting
+message TCPReq {
+  string PipeName = 16;
+  uint32 SliverID = 9;
+}
 
+message TCP {
+  bool Success = 1;
+  string Err = 2;
+}
+
+// Pivot transport
 message PivotOpen {
   uint32 PivotID = 12;
   string PivotType = 13;

@@ -248,6 +248,9 @@ func parseCompileFlags(ctx *grumble.Context) *clientpb.SliverConfig {
 	namedPipeC2 := parseNamedPipec2(ctx.Flags.String("named-pipe"))
 	c2s = append(c2s, namedPipeC2...)
 
+	tcpPivotC2 := parseTCPPivotc2(ctx.Flags.String("tcp-pivot"))
+	c2s = append(c2s, tcpPivotC2...)
+
 	var symbolObfuscation bool
 	if ctx.Flags.Bool("debug") {
 		symbolObfuscation = false
@@ -255,8 +258,8 @@ func parseCompileFlags(ctx *grumble.Context) *clientpb.SliverConfig {
 		symbolObfuscation = !ctx.Flags.Bool("skip-symbols")
 	}
 
-	if len(mtlsC2) == 0 && len(httpC2) == 0 && len(dnsC2) == 0 && len(namedPipeC2) == 0 {
-		fmt.Printf(Warn + "Must specify at least one of --mtls, --http, --dns, or --named-pipe\n")
+	if len(mtlsC2) == 0 && len(httpC2) == 0 && len(dnsC2) == 0 && len(namedPipeC2) == 0 && len(tcpPivotC2) == 0 {
+		fmt.Printf(Warn + "Must specify at least one of --mtls, --http, --dns, --named-pipe, or --tcp-pivot\n")
 		return nil
 	}
 
@@ -416,6 +419,27 @@ func parseNamedPipec2(args string) []*clientpb.SliverC2 {
 	}
 	for index, arg := range strings.Split(args, ",") {
 		uri, err := url.Parse("namedpipe://" + arg)
+		if len(arg) < 1 {
+			continue
+		}
+		if err != nil {
+			return c2s
+		}
+		c2s = append(c2s, &clientpb.SliverC2{
+			Priority: uint32(index),
+			URL:      uri.String(),
+		})
+	}
+	return c2s
+}
+
+func parseTCPPivotc2(args string) []*clientpb.SliverC2 {
+	c2s := []*clientpb.SliverC2{}
+	if args == "" {
+		return c2s
+	}
+	for index, arg := range strings.Split(args, ",") {
+		uri, err := url.Parse("tcppivot://" + arg)
 		if len(arg) < 1 {
 			continue
 		}

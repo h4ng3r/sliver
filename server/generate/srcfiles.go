@@ -90,6 +90,7 @@ var (
 		"shell/pty/pty_unsupported.go",
 
 		"pivots/pivots.go",
+		"pivots/tcp/tcp.go",
 
 		"taskrunner/task.go",
 		"taskrunner/task_windows.go",
@@ -111,6 +112,7 @@ var (
 
 		"transports/crypto.go",
 		"transports/named-pipe.go",
+		"transports/tcp-pivot.go",
 		"transports/tcp-http.go",
 		"transports/tcp-mtls.go",
 		"transports/transports.go",

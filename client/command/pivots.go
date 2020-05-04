@@ -70,3 +70,41 @@ func namedPipeListener(ctx *grumble.Context, rpc RPCServer) {
 		fmt.Printf(Info+"Listening on %s", "\\\\.\\pipe\\"+namedPipe.GetPipeName())
 	}
 }
+
+func tcpListener(ctx *grumble.Context, rpc RPCServer) {
+	if ActiveSliver.Sliver == nil {
+		fmt.Printf(Warn + "Please select an active sliver via `use`\n")
+		return
+	}
+
+	//pipeName := ctx.Flags.String("name")
+
+	/*if pipeName == "" {
+		fmt.Printf(Warn + "-n parameter missing\n")
+		return
+	}*/
+	tcpReq := &sliverpb.TCPReq{
+		SliverID: ActiveSliver.Sliver.ID,
+	}
+	data, _ := proto.Marshal(tcpReq)
+	resp := <-rpc(&sliverpb.Envelope{
+		Type: sliverpb.MsgTCPReq,
+		Data: data,
+	}, defaultTimeout)
+	if resp.Err != "" {
+		fmt.Printf(Warn+"Error: %s", resp.Err)
+		return
+	}
+
+	tcpRes := &sliverpb.TCP{}
+	err := proto.Unmarshal(resp.Data, tcpRes)
+	if err != nil {
+		fmt.Printf(Warn + "Failed to decode response\n")
+		return
+	}
+	if tcpRes.Err != "" {
+		fmt.Printf(Warn+"Error: %s", tcpRes.Err)
+	} else {
+		fmt.Printf(Info+"Listening on %s", "XXXX")
+	}
+}

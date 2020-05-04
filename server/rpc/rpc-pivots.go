@@ -44,3 +44,20 @@ func rpcNamedPipesListener(req []byte, timeout time.Duration, resp RPCResponse) 
 	data, err = sliver.Request(sliverpb.MsgNamedPipesReq, timeout, data)
 	resp(data, err)
 }
+
+func rpcTCPListener(req []byte, timeout time.Duration, resp RPCResponse) {
+	TCPReq := &sliverpb.TCPReq{}
+	err := proto.Unmarshal(req, TCPReq)
+	if err != nil {
+		resp([]byte{}, err)
+		return
+	}
+	sliver := (*core.Hive.Slivers)[TCPReq.SliverID]
+	if sliver == nil {
+		resp([]byte{}, err)
+		return
+	}
+	data, _ := proto.Marshal(&sliverpb.TCPReq{})
+	data, err = sliver.Request(sliverpb.MsgTCPReq, timeout, data)
+	resp(data, err)
+}

